@@ -1,0 +1,57 @@
+#Created by Troy Harwood
+#Survival Prediction Using Random Forests (Kaggle Titanic Dataset)
+
+#Import Training Set: train
+train_url <- "http://s3.amazonaws.com/assets.datacamp.com/course/Kaggle/train.csv"
+train <- read.csv(train_url)
+
+#Import Testing Set: test
+test_url <- "http://s3.amazonaws.com/assets.datacamp.com/course/Kaggle/test.csv"
+test <- read.csv(test_url)
+
+#Survival Rates In Absolute Numbers
+table(train$Survived)
+
+#Survival Rates In Proportions
+prop.table(table(train$Survived))
+
+# Two-Way Comparison: Sex and Survived
+table(train$Sex, train$Survived)
+
+#Two-Way Comparison: Row-Wise Proportions
+prop.table(table(train$Sex, train$Survived), 1)
+
+#Create The Column Child, Indicate Whether Child Or No Child
+train$Child <- NA
+train$Child[train$Age < 18] <- 1
+train$Child[train$Age >= 18] <- 0
+
+#Two-Way Comparison
+prop.table(table(train$Child, train$Survived), 1)
+
+#Copy Of Test
+test_one <- test
+
+# Initialize Survived column To 0
+test_one$Survived <- 0
+
+# Set Survived To 1 If Sex Equals "female"
+test_one$Survived[test$Sex == "female"] <- 1
+
+#Load randomForest package
+library(randomForest)
+
+#Seed For Reproducibility
+set.seed(111)
+
+#Apply Random Forest Algorithm
+my_forest <- randomForest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked + Title, data = train, importance = TRUE, ntree = 1000)
+
+#Make Prediction Using Test Set
+my_prediction <- predict(my_forest, test)
+
+#Generate Data Frame w/ Two Columns: PassengerID & Survived, Survived Contains Predictions
+my_solution <- data.frame(PassengerId = test$PassengerId, Survived = my_prediction)
+
+#Save To .csv
+write.csv(my_solution, file = "my_solution.csv", row.names = FALSE)
